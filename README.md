@@ -51,6 +51,18 @@ source venv/bin/activate
 
 # Install the requirements
 pip install -r requirements.txt
+
+# Necessário atualizar o pip
+pip install --upgrade pip
+
+# Necessário instalar/atualizar o setuptools
+pip install --upgrade setuptools
+
+# Necessário rodar o comando de instalação utilizando UTF-8
+export PYTHONUTF8=1 && pip install -r requirements.txt
+
+# Necessário instalar o MSVC++ 14.0+
+https://visualstudio.microsoft.com/de/visual-cpp-build-tools/
 ```
 
 ## Usage
