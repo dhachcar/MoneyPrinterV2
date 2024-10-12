@@ -63,6 +63,15 @@ export PYTHONUTF8=1 && pip install -r requirements.txt
 
 # Necessário instalar o MSVC++ 14.0+
 https://visualstudio.microsoft.com/de/visual-cpp-build-tools/
+
+# Necessário instalar o Firefox
+https://www.mozilla.org/pt-BR/firefox/new/
+
+# Necessário criar um profile do Firefox
+Navegue até o diretório de instalação do Firefox e rode o comando "firefox.exe -CreateProfile profileXPTO" para criar um novo profile
+
+# Criar arquivo config.json
+Duplicar do config.example.json e preencher
 ```
 
 ## Usage
