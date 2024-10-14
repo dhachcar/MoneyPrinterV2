@@ -242,7 +242,7 @@ class YouTube:
         n_prompts = len(self.script) / 3
 
         prompt = f"""
-        Generate {abs(n_prompts)} Image Prompts for AI Image Generation,
+        Generate {round(abs(n_prompts), 0)} Image Prompts for AI Image Generation,
         depending on the subject of a video.
         Subject: {self.subject}
 
@@ -258,51 +258,65 @@ class YouTube:
         YOU MUST ONLY RETURN THE JSON-ARRAY OF STRINGS.
         YOU MUST NOT RETURN ANYTHING ELSE. 
         YOU MUST NOT RETURN THE SCRIPT.
+        YOU MUST RETURN A JSON ARRAY, JUST LIKE I ORDERED BEFORE.
+        YOU CANNOT RETURN A JUMP LINE OR \n IN THE RESPONSE.
         
         The search terms must be related to the subject of the video.
         Here is an example of a JSON-Array of strings:
         ["image prompt 1", "image prompt 2", "image prompt 3", "image prompt 4"]
 
-        YOU MUST RETURN A JSON ARRAY, JUST LIKE I ORDERED BEFORE.
-
         For context, here is the full text:
         {self.script}
         """
-        
-        # TODO: as vezes gera 1 item apenas com muito texto... colocar alguma trava para retentar (se tiver menos que 5 itens no array ou etc)
-        completion = str(self.generate_response(prompt, model=parse_model(get_image_prompt_llm())))\
-            .replace("```json", "") \
-            .replace("```", "")
 
-        image_prompts = []
+        ok = False
 
-        if "image_prompts" in completion:
-            image_prompts = json.loads(completion)["image_prompts"]
-        else:
-            try:
-                image_prompts = json.loads(completion)
-                if get_verbose():
-                    info(f" => Generated Image Prompts: {image_prompts}")
-            except Exception:
-                if get_verbose():
-                    warning("GPT returned an unformatted response. Attempting to clean...")
+        while not ok:
+            completion = str(self.generate_response(prompt, model=parse_model(get_image_prompt_llm())))\
+                .replace("```json", "") \
+                .replace("```", "")
 
-                # Get everything between [ and ], and turn it into a list
-                r = re.compile(r"\[.*\]")
-                image_prompts = r.findall(completion)
-                if len(image_prompts) == 0:
+            image_prompts = []
+
+            if "image_prompts" in completion:
+                image_prompts = json.loads(completion)["image_prompts"]
+            else:
+                try:
+                    image_prompts = json.loads(completion)
                     if get_verbose():
-                        warning("Failed to generate Image Prompts. Retrying...")
-                    return self.generate_prompts()
+                        info(f" => Generated Image Prompts: {image_prompts}")
+                except Exception:
+                    if get_verbose():
+                        warning("GPT returned an unformatted response. Attempting to clean...")
 
-        self.image_prompts = image_prompts
+                    # Get everything between [ and ], and turn it into a list
+                    r = re.compile(r"\[.*\]")
+                    image_prompts = r.findall(completion)
+                    if len(image_prompts) == 0:
+                        if get_verbose():
+                            warning("Failed to generate Image Prompts. Retrying...")
+                        return self.generate_prompts()
 
-        # Check the amount of image prompts
-        # and remove if it's more than needed
-        if len(image_prompts) > n_prompts:
-            image_prompts = image_prompts[:n_prompts]
+            # TODO: as vezes gera 1 item apenas com muito texto... colocar alguma trava para retentar (se tiver menos que 5 itens no array ou etc)
+            # necessário testar mais... também precisa arrumar a fonte das legendas
+            if len(image_prompts) == 1:
+                image_prompts = image_prompts.replace(r'\\n', '').replace(r'\\"', '"').replace(r'\\', '').replace('\n', '')
+                image_prompts = json.loads(image_prompts)
 
-        success(f"Generated {len(image_prompts)} Image Prompts.")
+            self.image_prompts = image_prompts
+
+            # Verifica a quantidade de imagens geradas, deve ter um tamanho mínimo de 6
+            if len(image_prompts) < 6:
+                ok = False
+            else:
+                ok = True
+
+                # Check the amount of image prompts
+                # and remove if it's more than needed
+                if len(image_prompts) > n_prompts:
+                    image_prompts = image_prompts[:n_prompts]
+
+                success(f"Generated {len(image_prompts)} Image Prompts.")
 
         return image_prompts
 
