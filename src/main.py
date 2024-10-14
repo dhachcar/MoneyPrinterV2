@@ -65,15 +65,16 @@ def main():
                     "nickname": nickname,
                     "firefox_profile": fp_profile,
                     "niche": niche,
+                    "image_style": "", # TODO: dar suporte para o input()
                     "language": language,
                     "videos": []
                 })
         else:
             table = PrettyTable()
-            table.field_names = ["ID", "UUID", "Nickname", "Niche"]
+            table.field_names = ["ID", "UUID", "Nickname", "Niche", "Image Style"]
 
             for account in cached_accounts:
-                table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["niche"], "green")])
+                table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["niche"], "green"), colored(account["image_style"], "blue")])
 
             print(table)
 
@@ -90,11 +91,12 @@ def main():
                 main()
             else:
                 youtube = YouTube(
-                    selected_account["id"],
-                    selected_account["nickname"],
-                    selected_account["firefox_profile"],
-                    selected_account["niche"],
-                    selected_account["language"]
+                    account_uuid=selected_account["id"],
+                    account_nickname=selected_account["nickname"],
+                    fp_profile_path=selected_account["firefox_profile"],
+                    niche=selected_account["niche"],
+                    image_style=selected_account["image_style"],
+                    language=selected_account["language"]
                 )
 
                 while True:

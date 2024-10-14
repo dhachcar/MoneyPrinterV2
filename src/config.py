@@ -9,7 +9,7 @@ ROOT_DIR = os.path.dirname(sys.path[0])
 
 def assert_folder_structure() -> None:
     """
-    Make sure that the nessecary folder structure is present.
+    Make sure that the necessary folder structure is present.
 
     Returns:
         None

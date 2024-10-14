@@ -43,7 +43,7 @@ class YouTube:
     6. Show images each for n seconds, n: Duration of TTS / Amount of images [DONE]
     7. Combine Concatenated Images with the Text-to-Speech [DONE]
     """
-    def __init__(self, account_uuid: str, account_nickname: str, fp_profile_path: str, niche: str, language: str) -> None:
+    def __init__(self, account_uuid: str, account_nickname: str, fp_profile_path: str, niche: str, image_style: str, language: str) -> None:
         """
         Constructor for YouTube Class.
 
@@ -61,6 +61,7 @@ class YouTube:
         self._account_nickname: str = account_nickname
         self._fp_profile_path: str = fp_profile_path
         self._niche: str = niche
+        self._image_style: str = image_style
         self._language: str = language
 
         self.images = []
@@ -73,8 +74,10 @@ class YouTube:
             self.options.add_argument("--headless")
 
         # Set the profile path
-        self.options.add_argument("-profile")
-        self.options.add_argument(fp_profile_path)
+        # !deprecated!
+        # self.options.add_argument("-profile")
+        # self.options.add_argument(fp_profile_path)
+        self.options.set_preference('profile', fp_profile_path)
 
         # Set the service
         self.service: Service = Service(GeckoDriverManager().install())
@@ -102,6 +105,16 @@ class YouTube:
         """
         return self._language
     
+    @property
+    def image_style(self) -> str:
+        """
+        Getter Method for the image style to use.
+
+        Returns:
+            image_style (str): The image style to use
+        """
+        return self._image_style
+
     def generate_response(self, prompt: str, model: any = None) -> str:
         """
         Generates an LLM Response based on a prompt and the user-provided model.
@@ -229,7 +242,7 @@ class YouTube:
         n_prompts = len(self.script) / 3
 
         prompt = f"""
-        Generate {n_prompts} Image Prompts for AI Image Generation,
+        Generate {abs(n_prompts)} Image Prompts for AI Image Generation,
         depending on the subject of a video.
         Subject: {self.subject}
 
@@ -248,12 +261,15 @@ class YouTube:
         
         The search terms must be related to the subject of the video.
         Here is an example of a JSON-Array of strings:
-        ["image prompt 1", "image prompt 2", "image prompt 3"]
+        ["image prompt 1", "image prompt 2", "image prompt 3", "image prompt 4"]
+
+        YOU MUST RETURN A JSON ARRAY, JUST LIKE I ORDERED BEFORE.
 
         For context, here is the full text:
         {self.script}
         """
-
+        
+        # TODO: as vezes gera 1 item apenas com muito texto... colocar alguma trava para retentar (se tiver menos que 5 itens no array ou etc)
         completion = str(self.generate_response(prompt, model=parse_model(get_image_prompt_llm())))\
             .replace("```json", "") \
             .replace("```", "")
@@ -302,7 +318,7 @@ class YouTube:
         """
         ok = False
         while ok == False:
-            url = f"https://hercai.onrender.com/{get_image_model()}/text2image?prompt={prompt}"
+            url = f"https://hercai.onrender.com/{get_image_model()}/text2image?prompt={self.image_style}, {prompt}"
 
             r = requests.get(url)
             parsed = r.json()
@@ -472,6 +488,7 @@ class YouTube:
         final_clip = final_clip.set_fps(30)
         random_song = choose_random_song()
         
+        # TODO: criar uma opção para não gerar legendas (precisa de uma conta externa que pode gerar custos)
         subtitles_path = self.generate_subtitles(self.tts_path)
 
         # Equalize srt file

@@ -4,7 +4,7 @@
   "headless": false,
   "twitter_language": "English",
   "llm": "gpt4",
-  "image_prompt_llm": "gpt35_turbo",
+  "image_prompt_llm": "gpt4",
   "image_model": "prodia",
   "threads": 2,
   "zip_url": "",
