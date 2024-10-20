@@ -298,17 +298,29 @@ class YouTube:
                         return self.generate_prompts()
 
             # TODO: as vezes gera 1 item apenas com muito texto... colocar alguma trava para retentar (se tiver menos que 5 itens no array ou etc)
-            # necessário testar mais... também precisa arrumar a fonte das legendas
-            if len(image_prompts) == 1:
+            # TODO: permitir a escolha do audio/legenda
+
+            # se for uma string simples, limpa e transforma em array
+            if (isinstance(image_prompts, str)):
                 image_prompts = image_prompts.replace(r'\\n', '').replace(r'\\"', '"').replace(r'\\', '').replace('\n', '')
                 image_prompts = json.loads(image_prompts)
 
-            self.image_prompts = image_prompts
+            # se for um array de 1 posição, limpa e transforma num array de n dimensões
+            if (isinstance(image_prompts, list) and len(image_prompts) == 1):
+                image_prompts = image_prompts[0].replace('\\n', '').replace('\\"', '"').replace('\\', '').replace('\n', '')
+                image_prompts = json.loads(image_prompts)
 
-            # Verifica a quantidade de imagens geradas, deve ter um tamanho mínimo de 6
-            if len(image_prompts) < 6:
+            # verifica a quantidade de prompts de imagens gerados, deve ter no mínimo 8
+            if len(image_prompts) < 8:
                 ok = False
             else:
+                # pega até no máximo 10 prompts
+                if len(image_prompts) > 10:
+                    image_prompts = image_prompts[:10]
+
+                # segue o fluxo normal
+                self.image_prompts = image_prompts
+
                 ok = True
 
                 # Check the amount of image prompts
@@ -457,10 +469,10 @@ class YouTube:
         generator = lambda txt: TextClip(
             txt,
             font=os.path.join(get_fonts_dir(), get_font()),
-            fontsize=100,
+            fontsize=82,
             color="#FFFF00",
             stroke_color="black",
-            stroke_width=5,
+            stroke_width=4,
             size=(1080, 1920),
             method="caption",
         )
@@ -493,7 +505,7 @@ class YouTube:
                 clip = clip.resize((1080, 1920))
 
                 # FX (Fade In)
-                #clip = clip.fadein(2)
+                clip = clip.fadein(2).fadeout(2)
 
                 clips.append(clip)
                 tot_dur += clip.duration
@@ -510,12 +522,12 @@ class YouTube:
         
         # Burn the subtitles into the video
         subtitles = SubtitlesClip(subtitles_path, generator)
+        subtitles = subtitles.set_position(("center", "top"))
 
-        subtitles.set_pos(("center", "center"))
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
 
         # Turn down volume
-        random_song_clip = random_song_clip.fx(afx.volumex, 0.1)
+        random_song_clip = random_song_clip.fx(afx.volumex, 0.35)
         comp_audio = CompositeAudioClip([
             tts_clip.set_fps(44100),
             random_song_clip
