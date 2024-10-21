@@ -8,3 +8,5 @@ niche.txt
 *.exe
 auto.sh
 .env
+test/**/assets
+test/**/output
