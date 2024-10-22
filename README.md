@@ -72,6 +72,9 @@ Navegue até o diretório de instalação do Firefox e rode o comando "firefox.e
 
 # Criar arquivo config.json
 Duplicar do config.example.json e preencher
+
+# Configurar fontes no ImageMagick (Windows)
+Adicionar o caminho da fonte no arquivo "type-ghostscript.xml". P.ex.: <type format="ttf" name="Montserrat-ExtraBold" glyphs="C:\XPTO\fonts\Montserrat-ExtraBold.ttf" />
 ```
 
 ## Usage

@@ -1,4 +1,5 @@
 from moviepy.editor import *
+from moviepy.video.fx.all import lum_contrast, colorx
 from moviepy.video.tools.subtitles import SubtitlesClip
 from termcolor import colored
 from moviepy.video.fx.all import crop
@@ -38,11 +39,12 @@ class Test:
         # Make a generator that returns a TextClip when called with consecutive
         generator = lambda txt: TextClip(
             txt,
-            font=os.path.join(ROOT_DIR, "video-gen", "assets", "Roboto-Bold.ttf"),
-            fontsize=100,
-            color="#FFFF00",
-            stroke_color="black",
-            stroke_width=20,
+            # font=os.path.join(ROOT_DIR, "video-gen", "assets", "Montserrat-ExtraBold.ttf"),
+            font='bold_font',
+            fontsize=68,
+            color="#ffff00",
+            stroke_color="#000",
+            stroke_width=5,
             size=(1080, 1920),
             method="caption",
         )
@@ -72,7 +74,12 @@ class Test:
                     clip = crop(clip, width=round(0.5625*clip.h), height=clip.h, \
                                 x_center=clip.w / 2, \
                                 y_center=clip.h / 2)
+                    
                 clip = clip.resize((1080, 1920))
+
+                # aumenta o brilho
+                clip = clip.fx(colorx, 1.5)
+                # clip = clip.fx(lum_contrast, lum=20, contrast=1.5, contrast_thr=127)
 
                 # FX (Fade In)
                 clip = clip.fadein(2).fadeout(2)
@@ -91,7 +98,7 @@ class Test:
 
         # Burn the subtitles into the video
         subtitles = SubtitlesClip(subtitles_path, generator)
-        subtitles.set_position(("center", "center"))
+        subtitles.set_position(("center", "bottom"))
 
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
 
