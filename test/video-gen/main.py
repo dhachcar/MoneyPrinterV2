@@ -7,17 +7,57 @@ from moviepy.config import change_settings
 import sys
 import os
 import srt_equalizer
+import numpy as np
+import math
+from PIL import Image
 
 # Adiciona o diretório dois níveis acima ao sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+)
 
 from utils import *
 from config import *
 
-change_settings({"IMAGEMAGICK_BINARY": 'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\magick.exe'})
+change_settings(
+    {"IMAGEMAGICK_BINARY": "C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\magick.exe"}
+)
+
 
 def get_verbose():
     return True
+
+# https://pjoshi15.com/zoom-effects/
+def zoom_in_effect(clip, zoom_ratio=0.04):
+    def effect(get_frame, t):
+        img = Image.fromarray(get_frame(t))
+        base_size = img.size
+
+        new_size = [
+            math.ceil(img.size[0] * (1 + (zoom_ratio * t))),
+            math.ceil(img.size[1] * (1 + (zoom_ratio * t))),
+        ]
+
+        # The new dimensions must be even.
+        new_size[0] = new_size[0] + (new_size[0] % 2)
+        new_size[1] = new_size[1] + (new_size[1] % 2)
+
+        img = img.resize(new_size, Image.LANCZOS)
+
+        x = math.ceil((new_size[0] - base_size[0]) / 2)
+        y = math.ceil((new_size[1] - base_size[1]) / 2)
+
+        img = img.crop([x, y, new_size[0] - x, new_size[1] - y]).resize(
+            base_size, Image.LANCZOS
+        )
+
+        result = np.array(img)
+        img.close()
+
+        return result
+
+    return clip.fl(effect)
+
 
 class Test:
     def __init__(self):
@@ -32,7 +72,14 @@ class Test:
 
         combined_image_path = os.path.join(ROOT_DIR, "video-gen", "output", "test.mp4")
         threads = 2
-        tts_clip = AudioFileClip(os.path.join(ROOT_DIR, "video-gen", "assets", "51da195f-5d9a-40d8-9a3a-6785e031a047.wav"))
+        tts_clip = AudioFileClip(
+            os.path.join(
+                ROOT_DIR,
+                "video-gen",
+                "assets",
+                "51da195f-5d9a-40d8-9a3a-6785e031a047.wav",
+            )
+        )
         max_duration = tts_clip.duration
         req_dur = max_duration / len(self.images)
 
@@ -40,7 +87,7 @@ class Test:
         generator = lambda txt: TextClip(
             txt,
             # font=os.path.join(ROOT_DIR, "video-gen", "assets", "Montserrat-ExtraBold.ttf"),
-            font='bold_font',
+            font="bold_font",
             fontsize=68,
             color="#ffff00",
             stroke_color="#000",
@@ -56,33 +103,44 @@ class Test:
         # Add downloaded clips over and over until the duration of the audio (max_duration) has been reached
         while tot_dur < max_duration:
             for image_path in self.images:
-                clip = ImageClip(os.path.join(ROOT_DIR, "video-gen", "assets", image_path))
+                clip = ImageClip(
+                    os.path.join(ROOT_DIR, "video-gen", "assets", image_path)
+                )
                 clip.duration = req_dur
                 clip = clip.set_fps(30)
 
                 # Not all images are same size,
                 # so we need to resize them
-                if round((clip.w/clip.h), 4) < 0.5625:
+                if round((clip.w / clip.h), 4) < 0.5625:
                     if get_verbose():
                         info(f" => Resizing Image: {image_path} to 1080x1920")
-                    clip = crop(clip, width=clip.w, height=round(clip.w/0.5625), \
-                                x_center=clip.w / 2, \
-                                y_center=clip.h / 2)
+                    clip = crop(
+                        clip,
+                        width=clip.w,
+                        height=round(clip.w / 0.5625),
+                        x_center=clip.w / 2,
+                        y_center=clip.h / 2,
+                    )
                 else:
                     if get_verbose():
                         info(f" => Resizing Image: {image_path} to 1920x1080")
-                    clip = crop(clip, width=round(0.5625*clip.h), height=clip.h, \
-                                x_center=clip.w / 2, \
-                                y_center=clip.h / 2)
-                    
+                    clip = crop(
+                        clip,
+                        width=round(0.5625 * clip.h),
+                        height=clip.h,
+                        x_center=clip.w / 2,
+                        y_center=clip.h / 2,
+                    )
+
                 clip = clip.resize((1080, 1920))
 
-                # aumenta o brilho
-                clip = clip.fx(colorx, 1.5)
-                # clip = clip.fx(lum_contrast, lum=20, contrast=1.5, contrast_thr=127)
+                # zoom lentamente (8%/s + centralizado na imagem)
+                # clip = clip.set_position(("center", "center"))
+                # clip = clip.resize(lambda t: 1 + 0.08 * t)
+                clip = zoom_in_effect(clip)
 
                 # FX (Fade In)
-                clip = clip.fadein(2).fadeout(2)
+                clip = clip.fadein(2, initial_color=None)
 
                 clips.append(clip)
                 tot_dur += clip.duration
@@ -91,35 +149,32 @@ class Test:
         final_clip = final_clip.set_fps(30)
         random_song = os.path.join(ROOT_DIR, "video-gen", "assets", "1.mp3")
 
-        subtitles_path = os.path.join(ROOT_DIR, "video-gen", "assets", "a13977a0-b72b-4e60-a07d-06f2d3e4658e.srt")
+        subtitles_path = os.path.join(
+            ROOT_DIR, "video-gen", "assets", "a13977a0-b72b-4e60-a07d-06f2d3e4658e.srt"
+        )
 
         # Equalize srt file
         srt_equalizer.equalize_srt_file(subtitles_path, subtitles_path, 10)
 
         # Burn the subtitles into the video
         subtitles = SubtitlesClip(subtitles_path, generator)
-        subtitles.set_position(("center", "bottom"))
+        subtitles.set_position(("center", "center"))
 
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
 
         # Turn down volume
         random_song_clip = random_song_clip.fx(afx.volumex, 0.35)
-        comp_audio = CompositeAudioClip([
-            tts_clip.set_fps(44100),
-            random_song_clip
-        ])
+        comp_audio = CompositeAudioClip([tts_clip.set_fps(44100), random_song_clip])
 
         final_clip = final_clip.set_audio(comp_audio)
         final_clip = final_clip.set_duration(tts_clip.duration)
 
         # Add subtitles
-        final_clip = CompositeVideoClip([
-            final_clip,
-            subtitles
-        ])
+        final_clip = CompositeVideoClip([final_clip, subtitles])
 
         final_clip.write_videofile(combined_image_path, threads=threads)
 
-        success(f"Wrote Video to \"{combined_image_path}\"")
+        success(f'Wrote Video to "{combined_image_path}"')
+
 
 Test()
