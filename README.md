@@ -68,7 +68,7 @@ https://visualstudio.microsoft.com/de/visual-cpp-build-tools/
 https://www.mozilla.org/pt-BR/firefox/new/
 
 # Necessário criar um profile do Firefox
-Navegue até o diretório de instalação do Firefox e rode o comando "firefox.exe -CreateProfile profileXPTO" para criar um novo profile
+Navegue até o diretório de instalação do Firefox e rode o comando "firefox.exe -CreateProfile profileXPTO" para criar um novo profile (para ver os perfis, usar o comando about:profiles dentro do FireFox ou firefox.exe -P no cmd)
 
 # Criar arquivo config.json
 Duplicar do config.example.json e preencher

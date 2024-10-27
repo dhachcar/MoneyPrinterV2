@@ -21,7 +21,7 @@ from moviepy.video.fx.all import crop
 from moviepy.config import change_settings
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.options import Options, FirefoxProfile
 from moviepy.video.tools.subtitles import SubtitlesClip
 from webdriver_manager.firefox import GeckoDriverManager
 from datetime import datetime
@@ -78,13 +78,17 @@ class YouTube:
         # !deprecated!
         # self.options.add_argument("-profile")
         # self.options.add_argument(fp_profile_path)
-        self.options.set_preference('profile', fp_profile_path)
+        # self.options.set_preference('profile', fp_profile_path)
+        self.options.profile = FirefoxProfile(fp_profile_path)
 
         # Set the service
         self.service: Service = Service(GeckoDriverManager().install())
 
         # Initialize the browser
         self.browser: webdriver.Firefox = webdriver.Firefox(service=self.service, options=self.options)
+
+        # just for profile testing purposes
+        # self.browser.get('https://www.youtube.com')
 
     @property
     def niche(self) -> str:
@@ -298,8 +302,9 @@ class YouTube:
                             warning("Failed to generate Image Prompts. Retrying...")
                         return self.generate_prompts()
 
-            # TODO: as vezes gera 1 item apenas com muito texto... colocar alguma trava para retentar (se tiver menos que 5 itens no array ou etc)
             # TODO: permitir a escolha do audio/legenda
+            # TODO: aumentar tamanho do short para cerca de 60s
+            # TODO: e as hashtags que ele gera no titulo? tem algum problema? pesquisar
 
             # se for uma string simples, limpa e transforma em array
             if (isinstance(image_prompts, str)):
@@ -345,7 +350,7 @@ class YouTube:
         """
         ok = False
         while ok == False:
-            url = f"https://hercai.onrender.com/{get_image_model()}/text2image?prompt={self.image_style}, {prompt}"
+            url = f"https://hercai.onrender.com/{get_image_model()}/text2image?prompt={self.image_style},{prompt}"
 
             r = requests.get(url)
             parsed = r.json()
@@ -469,11 +474,12 @@ class YouTube:
         # Make a generator that returns a TextClip when called with consecutive
         generator = lambda txt: TextClip(
             txt,
-            font=os.path.join(get_fonts_dir(), get_font()),
-            fontsize=82,
-            color="#FFFF00",
-            stroke_color="black",
-            stroke_width=4,
+            # font=os.path.join(get_fonts_dir(), get_font()),
+            font=get_font(),
+            fontsize=68,
+            color="#ffff00",
+            stroke_color="#000",
+            stroke_width=5,
             size=(1080, 1920),
             method="caption",
         )
