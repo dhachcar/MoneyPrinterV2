@@ -25,6 +25,7 @@ from selenium.webdriver.firefox.options import Options
 from moviepy.video.tools.subtitles import SubtitlesClip
 from webdriver_manager.firefox import GeckoDriverManager
 from datetime import datetime
+from clipfx import zoom_in_effect
 
 # Set ImageMagick Path
 change_settings({"IMAGEMAGICK_BINARY": get_imagemagick_path()})
@@ -504,8 +505,11 @@ class YouTube:
                                 y_center=clip.h / 2)
                 clip = clip.resize((1080, 1920))
 
+                # FX (Zoom In centered)
+                clip = zoom_in_effect(clip)
+
                 # FX (Fade In)
-                clip = clip.fadein(2).fadeout(2)
+                clip = clip.fadein(2, initial_color=None)
 
                 clips.append(clip)
                 tot_dur += clip.duration
@@ -522,7 +526,7 @@ class YouTube:
         
         # Burn the subtitles into the video
         subtitles = SubtitlesClip(subtitles_path, generator)
-        subtitles = subtitles.set_position(("center", "top"))
+        subtitles.set_position(("center", "center"))
 
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
 

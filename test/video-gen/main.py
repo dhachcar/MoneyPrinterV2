@@ -27,6 +27,7 @@ change_settings(
 def get_verbose():
     return True
 
+
 # https://pjoshi15.com/zoom-effects/
 def zoom_in_effect(clip, zoom_ratio=0.04):
     def effect(get_frame, t):
