@@ -68,6 +68,16 @@ def get_headless() -> bool:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["headless"]
+    
+def get_skip_tts_subtitles() -> bool:
+    """
+    Gets the skip_tts_subtitles flag from the config file.
+
+    Returns:
+        skip_tts_subtitles (bool): The skip_tts_subtitles flag
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["skip_tts_subtitles"]
 
 def get_model() -> str:
     """

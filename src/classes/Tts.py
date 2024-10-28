@@ -28,6 +28,8 @@ class TTS:
         # Initialize the ModelManager
         self._model_manager = ModelManager(models_json_path)
 
+        # TODO: permitir utilizar outros modelos de voz
+
         # Download tts_models/en/ljspeech/fast_pitch
         self._model_path, self._config_path, self._model_item = \
             self._model_manager.download_model("tts_models/en/ljspeech/tacotron2-DDC_ph")

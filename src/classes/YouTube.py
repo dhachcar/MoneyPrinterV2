@@ -25,7 +25,7 @@ from selenium.webdriver.firefox.options import Options, FirefoxProfile
 from moviepy.video.tools.subtitles import SubtitlesClip
 from webdriver_manager.firefox import GeckoDriverManager
 from datetime import datetime
-from clipfx import zoom_in_effect
+from clipfx import zoom_in_effect, zoom_out_effect
 
 # Set ImageMagick Path
 change_settings({"IMAGEMAGICK_BINARY": get_imagemagick_path()})
@@ -130,6 +130,8 @@ class YouTube:
         Returns:
             response (str): The generated AI Repsonse.
         """
+        # TODO: suportar OpenAI O4-mini
+
         if not model:
             return g4f.ChatCompletion.create(
                 model=parse_model(get_model()),
@@ -167,6 +169,7 @@ class YouTube:
 
         return completion
 
+    # TODO: permitir escolher a quantidade de sentenças (isso aumenta ou diminui o video)
     def generate_script(self) -> str:
         """
         Generate a script for a video, depending on the subject of the video, the number of paragraphs, and the AI model.
@@ -175,7 +178,7 @@ class YouTube:
             script (str): The script of the video.
         """
         prompt = f"""
-        Generate a script for a video in 4 sentences, depending on the subject of the video.
+        Generate a script for a video in 8 sentences, depending on the subject of the video.
 
         The script is to be returned as a string with the specified number of paragraphs.
 
@@ -188,7 +191,7 @@ class YouTube:
 
         Obviously, the script should be related to the subject of the video.
         
-        YOU MUST NOT EXCEED THE 4 SENTENCES LIMIT. MAKE SURE THE 4 SENTENCES ARE SHORT.
+        YOU MUST NOT EXCEED THE 8 SENTENCES LIMIT. MAKE SURE THE 8 SENTENCES ARE SHORT.
         YOU MUST NOT INCLUDE ANY TYPE OF MARKDOWN OR FORMATTING IN THE SCRIPT, NEVER USE A TITLE.
         YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
         ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
@@ -279,7 +282,9 @@ class YouTube:
         while not ok:
             completion = str(self.generate_response(prompt, model=parse_model(get_image_prompt_llm())))\
                 .replace("```json", "") \
-                .replace("```", "")
+                .replace("```", "") \
+                .replace('&quot;', "'") \
+                .replace('&#39;', "'")
 
             image_prompts = []
 
@@ -302,9 +307,8 @@ class YouTube:
                             warning("Failed to generate Image Prompts. Retrying...")
                         return self.generate_prompts()
 
-            # TODO: permitir a escolha do audio/legenda
-            # TODO: aumentar tamanho do short para cerca de 60s
-            # TODO: e as hashtags que ele gera no titulo? tem algum problema? pesquisar
+            # TODO: aumentar tamanho do short para cerca de 60s (talvez aumentando o numero de sentenças?)
+            # TODO: o speech tem que terminar com um "and..." add pausa de 1s e reset do shorts
 
             # se for uma string simples, limpa e transforma em array
             if (isinstance(image_prompts, str)):
@@ -320,9 +324,9 @@ class YouTube:
             if len(image_prompts) < 8:
                 ok = False
             else:
-                # pega até no máximo 10 prompts
-                if len(image_prompts) > 10:
-                    image_prompts = image_prompts[:10]
+                # pega até no máximo 12 prompts
+                if len(image_prompts) > 12:
+                    image_prompts = image_prompts[:12]
 
                 # segue o fluxo normal
                 self.image_prompts = image_prompts
@@ -348,6 +352,9 @@ class YouTube:
         Returns:
             path (str): The path to the generated image.
         """
+
+        # TODO: criar uma forma de recriar todas as imgs caso eu não goste do que foi gerado
+
         ok = False
         while ok == False:
             url = f"https://hercai.onrender.com/{get_image_model()}/text2image?prompt={self.image_style},{prompt}"
@@ -512,7 +519,9 @@ class YouTube:
                 clip = clip.resize((1080, 1920))
 
                 # FX (Zoom In centered)
-                clip = zoom_in_effect(clip)
+                fx_functions = [zoom_in_effect, zoom_out_effect]
+                chosen_fx_function = random.choice(fx_functions)
+                clip = chosen_fx_function(clip)
 
                 # FX (Fade In)
                 clip = clip.fadein(2, initial_color=None)
@@ -524,15 +533,15 @@ class YouTube:
         final_clip = final_clip.set_fps(30)
         random_song = choose_random_song()
         
-        # TODO: criar uma opção para não gerar legendas (precisa de uma conta externa que pode gerar custos)
-        subtitles_path = self.generate_subtitles(self.tts_path)
+        if not get_skip_tts_subtitles():
+            subtitles_path = self.generate_subtitles(self.tts_path)
 
-        # Equalize srt file
-        equalize_subtitles(subtitles_path, 10)
-        
-        # Burn the subtitles into the video
-        subtitles = SubtitlesClip(subtitles_path, generator)
-        subtitles.set_position(("center", "center"))
+            # Equalize srt file
+            equalize_subtitles(subtitles_path, 10)
+            
+            # Burn the subtitles into the video
+            subtitles = SubtitlesClip(subtitles_path, generator)
+            subtitles.set_position(("center", "center"))
 
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
 

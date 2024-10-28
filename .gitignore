@@ -9,4 +9,7 @@ niche.txt
 auto.sh
 .env
 test/**/assets
-test/**/output
+test/**/assets-2
+
+test/**/output/*
+!.gitkeep
