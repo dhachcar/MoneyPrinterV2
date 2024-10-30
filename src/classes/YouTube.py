@@ -160,7 +160,7 @@ class YouTube:
         Returns:
             topic (str): The generated topic.
         """
-        completion = self.generate_response(f"Please generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence. Only return the topic, nothing else.")
+        completion = self.generate_response(f"Please generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence. Only return the topic, nothing else. Be creative.")
 
         if not completion:
             error("Failed to generate Topic.")
@@ -198,8 +198,8 @@ class YouTube:
         YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
         ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
         
-        Subject: {self.subject}
-        Language: {self.language}
+        Subject that must be considered: {self.subject}
+        Language that must be used: {self.language}
         """
         completion = self.generate_response(prompt)
 
@@ -405,8 +405,8 @@ class YouTube:
         """
         path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".wav")
 
-        # Clean script, remove every character that is not a word character, a space, a period, a question mark, or an exclamation mark.
-        self.script = re.sub(r'[^\w\s.?!]', '', self.script) + ' And...' # adiciona um "and..." no final da narração
+        # Clean script, remove every character that is not a word character, a space, a period, a comma, a question mark, or an exclamation mark.
+        self.script = re.sub(r'[^\w\s.,?!]', '', self.script) + ' And...' # adiciona um "and..." no final da narração
 
         tts_instance.synthesize(self.script, path)
 
