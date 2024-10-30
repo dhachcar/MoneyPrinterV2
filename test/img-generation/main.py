@@ -18,11 +18,13 @@ def get_verbose():
 
 def get_image_model():
     # "v1" , "v2" , "v2-beta" , "v3" (DALL-E) , "lexica" , "prodia", "simurg", "animefy", "raava", "shonin"
-    return "raava"
+    # v2 em manutenção
+    # v3 (DALL-E) gerou as imagens mais bonitas!
+    return "v3"
 
 
 def get_image_style():
-    return "Realism, vibrant colors, no persons, no aliens, no hands, no feets, no faces, generate just backgrounds and environments. Highly detailed style with a focus on realism."
+    return "Highly detailed style with a focus on realism. Dont generate any living creatures, humans, aliens, spaceships."
 
 
 def get_prompt():

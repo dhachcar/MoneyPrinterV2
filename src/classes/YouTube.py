@@ -167,6 +167,8 @@ class YouTube:
 
         self.subject = completion
 
+        info(f'Generated topic for the video: {completion}')
+
         return completion
 
     # TODO: permitir escolher a quantidade de sentenças (isso aumenta ou diminui o video)
@@ -233,9 +235,12 @@ class YouTube:
 
         description = self.generate_response(f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else.")
         
+        info(f'Generated title for metadata: {title}')
+        info(f'Generated description for metadata: {description}')
+
         self.metadata = {
-            "title": title,
-            "description": description
+            "title": title.replace('&quot;', "'").replace('&#39;', "'"),
+            "description": description.replace('&quot;', "'").replace('&#39;', "'")
         }
 
         return self.metadata
@@ -308,7 +313,6 @@ class YouTube:
                         return self.generate_prompts()
 
             # TODO: aumentar tamanho do short para cerca de 60s (talvez aumentando o numero de sentenças?)
-            # TODO: o speech tem que terminar com um "and..." add pausa de 1s e reset do shorts
 
             # se for uma string simples, limpa e transforma em array
             if (isinstance(image_prompts, str)):
@@ -402,7 +406,7 @@ class YouTube:
         path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".wav")
 
         # Clean script, remove every character that is not a word character, a space, a period, a question mark, or an exclamation mark.
-        self.script = re.sub(r'[^\w\s.?!]', '', self.script)
+        self.script = re.sub(r'[^\w\s.?!]', '', self.script) + ' And...' # adiciona um "and..." no final da narração
 
         tts_instance.synthesize(self.script, path)
 
