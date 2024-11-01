@@ -5,6 +5,7 @@ import time
 import requests
 import assemblyai as aai
 
+from openai import OpenAI
 from utils import *
 from cache import *
 from .Tts import TTS
@@ -58,6 +59,13 @@ class YouTube:
         Returns:
             None
         """
+
+        # OpenAI client
+        self.client = OpenAI(
+            api_key=get_openai_api_key()
+        )
+
+        # input configs
         self._account_uuid: str = account_uuid
         self._account_nickname: str = account_nickname
         self._fp_profile_path: str = fp_profile_path
@@ -65,6 +73,7 @@ class YouTube:
         self._image_style: str = image_style
         self._language: str = language
 
+        # empty array of images
         self.images = []
 
         # Initialize the Firefox profile
@@ -130,7 +139,42 @@ class YouTube:
         Returns:
             response (str): The generated AI Repsonse.
         """
-        # TODO: suportar OpenAI O4-mini
+
+        response = ''
+
+        if not model:
+            response = self.client.chat.completions.create(
+                model=get_model(),
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+        else:
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+
+        return response.choices[0].message.content
+
+    def generate_response_g4f(self, prompt: str, model: any = None) -> str:
+        """
+        Generates an LLM Response based on a prompt and the user-provided model.
+
+        Args:
+            prompt (str): The prompt to use in the text generation.
+
+        Returns:
+            response (str): The generated AI Repsonse.
+        """
 
         if not model:
             return g4f.ChatCompletion.create(
@@ -160,7 +204,7 @@ class YouTube:
         Returns:
             topic (str): The generated topic.
         """
-        completion = self.generate_response(f"Please generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence. Only return the topic, nothing else. Be creative.")
+        completion = self.generate_response(f"Generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence. Only return the raw topic, nothing else. Be creative.")
 
         if not completion:
             error("Failed to generate Topic.")
@@ -197,7 +241,8 @@ class YouTube:
         YOU MUST NOT INCLUDE ANY TYPE OF MARKDOWN OR FORMATTING IN THE SCRIPT, NEVER USE A TITLE.
         YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
         ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
-        
+        DO NOT ASK PEOPLE TO TUNE IN, LIKE, SHARE OR SUBSCRIBE. FOCUS ONLY ON THE VIDEO TOPIC.
+
         Subject that must be considered: {self.subject}
         Language that must be used: {self.language}
         """
@@ -216,6 +261,8 @@ class YouTube:
             self.generate_script()
         
         self.script = completion
+
+        info(f'Generated script for the video: {completion}')
     
         return completion
 
@@ -226,14 +273,17 @@ class YouTube:
         Returns:
             metadata (dict): The generated metadata.
         """
-        title = self.generate_response(f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else. Limit the title under 100 characters.")
+        title = self.generate_response(f"Generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the raw title, nothing else. You must generate a title with a maximum of 85 characters. Don't wrap the title in double quotes. Dont ask people to like, share or subscribe. Focus on what I asked.")
 
+        info(f'Generated title is: {title} with {len(title)} characters')
+
+        # Peço para gerar títulos com no máximo 85 caracteres, mas ele pode extrapolar. O limite máximo de título para um short é de 100 caracteres
         if len(title) > 100:
             if get_verbose():
                 warning("Generated Title is too long. Retrying...")
             return self.generate_metadata()
 
-        description = self.generate_response(f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else.")
+        description = self.generate_response(f"Generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else. Dont ask people to like, share or subscribe. Focus on what I asked.")
         
         info(f'Generated title for metadata: {title}')
         info(f'Generated description for metadata: {description}')
@@ -285,7 +335,7 @@ class YouTube:
         ok = False
 
         while not ok:
-            completion = str(self.generate_response(prompt, model=parse_model(get_image_prompt_llm())))\
+            completion = str(self.generate_response(prompt, model=get_image_prompt_llm()))\
                 .replace("```json", "") \
                 .replace("```", "") \
                 .replace('&quot;', "'") \
